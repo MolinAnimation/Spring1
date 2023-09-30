@@ -1,7 +1,6 @@
 package med.voll.api.controller;
 
 import java.net.URI;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -21,13 +20,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import med.voll.api.direccion.DatosDireccion;
-import med.voll.api.medico.DatosActualizarMedico;
-import med.voll.api.medico.DatosListadoMedico;
-import med.voll.api.medico.DatosRegistroMedico;
-import med.voll.api.medico.DatosRespuestaMedico;
-import med.voll.api.medico.Medico;
-import med.voll.api.medico.MedicoRepository;
+import med.voll.api.domain.direccion.DatosDireccion;
+import med.voll.api.domain.medico.DatosActualizarMedico;
+import med.voll.api.domain.medico.DatosListadoMedico;
+import med.voll.api.domain.medico.DatosRegistroMedico;
+import med.voll.api.domain.medico.DatosRespuestaMedico;
+import med.voll.api.domain.medico.Medico;
+import med.voll.api.domain.medico.MedicoRepository;
 
 @RestController
 @RequestMapping("/medicos")
@@ -50,9 +49,9 @@ public class MedicoController {
     }
 
     @GetMapping()
-    public Page<DatosListadoMedico> listadoMedicos(@PageableDefault(size = 2) Pageable paginacion) {
+    public ResponseEntity<Page<DatosListadoMedico>> listadoMedicos(@PageableDefault(size = 2) Pageable paginacion) {
         // return medicoRepository.findAll(paginacion).map(DatosListadoMedico::new);
-        return medicoRepository.findByActivoTrue(paginacion).map(DatosListadoMedico::new);
+        return ResponseEntity.ok(medicoRepository.findByActivoTrue(paginacion).map(DatosListadoMedico::new));
     }
 
     @PutMapping()
@@ -74,6 +73,17 @@ public class MedicoController {
         Medico medico = medicoRepository.getReferenceById(id);
         medico.desactivarMedico();
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<DatosRespuestaMedico> retornaDatosMedico(@PathVariable Long id) {
+        Medico medico = medicoRepository.getReferenceById(id);
+        var datosMedico = new DatosRespuestaMedico(medico.getId(), medico.getNombre(), medico.getEmail(),
+                medico.getTelefono(), medico.getEspecialidad().toString(),
+                new DatosDireccion(medico.getDireccion().getCalle(), medico.getDireccion().getDistrito(),
+                        medico.getDireccion().getCiudad(), medico.getDireccion().getNumero(),
+                        medico.getDireccion().getComplemento()));
+        return ResponseEntity.ok(datosMedico);
     }
 
     // DELETE EN BASE DE DATOS
